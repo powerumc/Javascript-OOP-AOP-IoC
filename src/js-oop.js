@@ -1,142 +1,212 @@
 
 ;
-var DEBUG = function() { console.log(arguments[0]); }
+var LOG   = function() { console.log.apply(console, arguments); };
+var DEBUG = function() { (console.debug || console.warn).apply(console, arguments); };
+var TRACE = function() { console.trace.apply(console, arguments); };
+var ERROR = function() { console.error.apply(console, arguments); };
 
-var oop = (function(oop) {
-    ;
 
-    var Accessor = {
-        Public: "public",
-        Private: "private"
-    };
+oop = (function() {
+    //Function.apply = function() { var a = Function.apply(arguments); a.objectId++;}
 
-    function isObject(obj) {
+    (function() {
+        var __id = 1;
+        Object.defineProperty(Object.prototype, "__object_id", {
+            writable: true
+        });
+        Object.defineProperty(Object.prototype, "objectId", {
+            get: function() {
+                if (this.__object_id == undefined)
+                    this.__object_id = __id++;
+                return this.__object_id;
+            }
+        });
+    }());
+
+    var isObject = function(obj) {
         return typeof obj === "object" && obj.constructor.name !== "Array";
     }
 
-    function isProperty(obj) {
-        return isObject(obj) && obj.get && obj.set;
+    var isProperty = function(obj) {
+        return isObject(obj) && (obj.get || obj.set);
     }
 
-    function isFunction(obj) {
+    var isFunction = function(obj) {
         return typeof obj === "function";
     }
 
-    function isArray(obj) {
+    var isArray = function(obj) {
         return typeof obj === "object" && obj.constructor.name === "Array";
     }
 
-    function isStatic(obj) {
-        
+    var isStatic = function(obj) {
+
+    }
+
+    var setStaticMethod = function(type, static_objects) {
+        for(var pp in static_objects) {
+            if (!static_objects.hasOwnProperty(pp)) continue;
+            LOG("[set static] ", pp);
+            type[pp] = static_objects[pp];
+        }
+    }
+
+    var setProperty = function(self, propName, funcGet, funcSet) {
+        Object.defineProperty(self, propName, { get: funcGet, set: funcSet });
     }
 
     var getProperties = function(clazz) {
-        DEBUG("----------- getProperties ---------");
-        var type = clazz[0];
         var propList = [];
+        var type = clazz;
         for(var p in type) {
             if (!type.hasOwnProperty(p)) continue;
-            DEBUG( "name:" + p + "   object:" + type[p] );
             propList.push({ "name":p, "object":type[p] });
         }
-        DEBUG(propList);
         return propList;
     };
 
+    var getClassFromLiterals = function(literals) {
+        var props = getProperties(literals);
+        function ____() { };
+
+        for(var p in props) {
+            setPropertySpecification(____, props[p]);
+        }
+
+        return ____;
+    };
+
+    var setPropertySpecification = function(type, p) {
+
+        var target = p.object;
+
+        if (p.name == "static") {
+            LOG("[set static] ", p.name);
+            setStaticMethod(type, target);
+            return;
+        }
+
+        if (isProperty(target)) {
+            LOG("[set property] ", p.name);
+            setProperty(self, p.name, target.get, target.set);
+            return;
+        }
+
+        if (isFunction(target)) {
+            LOG("[set function] ", p.name);
+            var params = getFunctionParameters(target.toString());
+            // LOG("[set function prototype] ", p.name);
+
+            // if (params && params.indexOf("base") >= 0 /*&& parent_object*/) {
+            //     // var id = parent_object.objectId || 0;
+            //     // if (oop.objects.indexOf(id) < 0) 
+            //     //     oop.objects[id] = parent_object;
+
+            //     var inject_param_base = "oop.objects[" + id +"]";
+            //     var inject_params     = ".apply(this,(function() { \n" + 
+            //         "var a=Array.prototype.slice.call((arguments[0] || [])); \n" + 
+            //         "a.push(" + inject_param_base + ");return a; })(arguments));";
+            //     var inject_body       = "(" + target.toString() + ")" + inject_params;
+            //     var inject_func       = Function.call(this, inject_body);
+            //     target                = inject_func;
+            //     LOG(inject_body);
+            // }
+            type.prototype[p.name] = target;
+            return;
+        } else {
+            LOG("[set function] ", p.name);
+        }
+    }
+
+    var getFunctionParameters = function(func) {
+        var pattern = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
+        var match = pattern.exec(func.toString());
+        if (!match) return null;
+        var params = match[1].replace(/ /g, "").split(',');
+        return params;
+    };
+
+    var Inject = function() {
+        var methods = Array.prototype.slice.apply(arguments, []);
+        for(var m in methods) {
+            m = methods[m];
+            p = getFunctionParameters(m);
+            DEBUG("[oop.inject] ", p);
+        }
+    };
+
     var Class = function(parents, classInfo) {
-        DEBUG("Class -------------");
-        
-        classInfo      = Array.prototype.slice.apply(arguments, [-1]);
+        classInfo      = Array.prototype.slice.apply(arguments, [-1])[0];
         var arrParents = Array.prototype.slice.apply(arguments, [0, arguments.length-1]);
-        if (arrParents && arrParents.length <= 1) { parents = undefined; }
-        DEBUG("parents: " + parents);
-        DEBUG("classInfo: " + classInfo);
+        if (arrParents && arrParents.length <= 1) { parents = undefined }
+        LOG("[classInfo] ", classInfo);
 
         if (classInfo === undefined) { 
-            DEBUG("classInfo === undefined");
             classInfo = parents; 
             parents = undefined;
         }
-        
 
-        return (function() {
-                DEBUG(parents);
-                if (parents) oop.extend(parents, this);
+        var parent_object;
+        var self_arguments = arguments;
+        var self           = this;
+        var type           = this.constructor;
+        var ret            = {};
 
-                var self  = this;
-                var type  = this.constructor;
-                var props = getProperties(classInfo);
-                
+        var clazz_definition = getClassFromLiterals(classInfo);
 
-                /*
-                for(var i=0; i<props.length; i++) {
-                    if (props[i].name == "static") {
-                        type[props[i].name] = props[i].object[props[i.name]];
-                    } else {
-                        DEBUG("COPY " + props[i].name);
-                        type.prototype[props[i].name] = props[i].object;
-                    }
-                }*/
-                for(var p in props) {
-                    if (!props.hasOwnProperty(p)) continue;
-                    if (props[p].name == "static") {
-                        var static_object = props[p].object;
-                        for(var pp in static_object) {
-                            type[pp] = static_object[pp];
-                        }
-                    } else {
-                        DEBUG("COPY " + props[p].name);
-                        type.prototype[props[p].name] = props[p].object;   
-                    }
-                }
+        for(var parent in arrParents) {
+            parent = arrParents[parent];
+            parent = (self.constructor && self.constructor.name !== "Window") ? parent : undefined;
+            if (parent) { 
+                oop.extend(parent, clazz_definition)
+            }
+        }
+
+        return clazz_definition;
 
 
-                (function() {
-                    DEBUG("call constructor...");
-                    if (parents) {
-                        DEBUG("call constructor...parent...");
-                        DEBUG(parents);
-                        parents.apply(this, arguments);
-                    }
-                    // if (self.init) { 
-                    //     DEBUG("call constructor...self...");
-                    //     self.init.apply(this, arguments);
-                    // }
-                })();
-
-                return this;
-        });
+        return ret;
     };
 
-    oop = {
+    return {
         extend: function(parent, clazz) {
-            DEBUG("oop.extend...");
-            for(var p in parent) if (parent.hasOwnProperty(p)) clazz[p] = parent[p];
+            var parent_object;
+            (function() {
+                if (parent) {
+                    parent_object = Object.create(parent.prototype);
+                    clazz.prototype.__base__ = parent_object;
+                }
+                if (clazz.init) { 
+                    clazz.init.apply(self, arguments);
+                }
+            })();
 
-            var extend_proxy            = function() { };
-            extend_proxy.prototype      = parent.prototype;
-            clazz.prototype             = new extend_proxy();
+            for(var p in parent_object) { if (parent.prototype.hasOwnProperty(p)) { clazz.prototype[p] = parent_object[p]; } }
             clazz.prototype.constructor = clazz;
+
+            return clazz;
         },
-        class: function(parents, classInfo) { 
+        class: function(parents, classInfo) {
             return Class.apply(this, arguments);
+        },
+        inject: function(method) {
+            return Inject.apply(this, arguments);
+        },
+        injectBehavior : function(before, after, exception, finally_) {
+            return InjectBehavior.apply(arguments);
         },
         getset: function(get, set) {
             this.get = get;
             this.set = set;
         },
-        get: function() { },
-        set: function(value) { }
+        get: function(funcGet) { setProperty(this, "prop2", funcGet, undefined); return "A"; },
+        set: function(value) { },
+        static: function(static_objects) {
+        },
+        objects: []
+    }
 
-    };
-
-    Object.defineProperty(oop, "public", {
-        get: function() { return oop; }
-    });
-
-    return oop;
-
-})(oop);
+})();
 
 /*
 var IProgram = oop.public.class({
@@ -152,55 +222,28 @@ var Program = oop.public.class({
     },
     Name: "Junil Um"
 });
+function a()
+
+function() { }
 */
 
-function IProgram() { 
-    console.log("IProgram.IProgram");
-    this.name = "POWERUMC";
-    IProgram.prototype.func = function() { console.log("base.func"); };
+var IFProgram = function() {
+    this.NAME = "POWERUMC";
+    IFProgram.prototype.FUNC = function() { console.log("FUNC"); };
 }
 
-var Program = (function(type) {
-    oop.extend(type, Program);
+var IProgram1 = oop.class({
+    interface1: function(base) { console.log("IProgram1.prototype.interface1"); },
+});
 
-    var self = this;
-    var base = type.prototype;
-
-    function Program() {
-        console.log("Program.Program");
-        type.apply(this, arguments)
-    }
-
-    Program.prototype.func = function() {
-        console.log("Program.func");
-        type.prototype.func.apply(this, arguments);
-    }
-
-    return Program;
-})(IProgram);
-var p = new Program();
-DEBUG("Program ------------------");
-DEBUG(p);
-
-// var Program = oop.public.class({
-//     Program: function() { },
-//     static: {
-
-//     },
-//     Id: oop.getset(function() { return _id; },
-//                    function(value) { _id = value; })
-// });
-
-function IIProgram() { 
-    console.log("call IIProgram");
-    this.user = "POWERUMC";
-    IIProgram.prototype.func = function() { console.log("base.func"); };
-}
-
-var ProgramImpl = oop.public.class(IIProgram, {
-    interface2: function() { console.log("ProgramImpl.prototype.interface2"); },
-    interface3: function() { console.log("ProgramImpl.prototype.interface3"); },
-    interface4: function() { console.log("ProgramImpl.prototype.interface3"); },
+var IProgram2 = oop.class(IProgram1, {
+    interface2: function(base) { console.log("IProgram2.prototype.interface2"); base.interface1(); },
+    interface3: function(base) { console.log("IProgram2.prototype.interface3"); }
+});
+/*
+var Program1 = oop.class(IProgram2, {
+    interface3: function(arg1, arg2, base) { console.log("Program1.prototype.interface3"); },
+    interface4: function() { console.log("Program1.prototype.interface4"); },
     static: {
         Name: "POWERUMC",
         getName: function() { return this.Name; }
@@ -210,7 +253,12 @@ var ProgramImpl = oop.public.class(IIProgram, {
         set: function(value) { this._name = value; }
     }
 });
+*/
+// var Program2 = oop.class(Program1, {
+//     interface5: function() { console.log("Program2.prototype.interface5"); }
+// });
 
-DEBUG("pimpl ---------------");
-var pimpl = new ProgramImpl();
-DEBUG(pimpl);
+var p1 = new IProgram2();
+DEBUG(oop.inject(p1.interface1));
+TRACE(p1);
+// 
