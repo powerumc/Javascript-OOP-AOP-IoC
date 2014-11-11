@@ -5,6 +5,7 @@ var DEBUG = function() { (console.debug || console.warn).apply(console, argument
 var TRACE = function() { console.trace.apply(console, arguments); };
 var ERROR = function() { console.error.apply(console, arguments); };
 
+var ptn = 
 
 oop = (function() {
     //Function.apply = function() { var a = Function.apply(arguments); a.objectId++;}
@@ -23,23 +24,23 @@ oop = (function() {
         });
     }());
 
-    var isObject = function(obj) {
+    function isObject(obj) {
         return typeof obj === "object" && obj.constructor.name !== "Array";
     }
 
-    var isProperty = function(obj) {
+    function isProperty(obj) {
         return isObject(obj) && (obj.get || obj.set);
     }
 
-    var isFunction = function(obj) {
+    function isFunction(obj) {
         return typeof obj === "function";
     }
 
-    var isArray = function(obj) {
+    function isArray(obj) {
         return typeof obj === "object" && obj.constructor.name === "Array";
     }
 
-    var isStatic = function(obj) {
+    function isStatic(obj) {
 
     }
 
@@ -77,7 +78,6 @@ oop = (function() {
     };
 
     var setPropertySpecification = function(type, p) {
-
         var target = p.object;
 
         if (p.name == "static") {
@@ -88,51 +88,135 @@ oop = (function() {
 
         if (isProperty(target)) {
             LOG("[set property] ", p.name);
-            setProperty(self, p.name, target.get, target.set);
+            setProperty(type.prototype, p.name, target.get, target.set);
             return;
         }
 
         if (isFunction(target)) {
             LOG("[set function] ", p.name);
-            var params = getFunctionParameters(target.toString());
-            // LOG("[set function prototype] ", p.name);
-
-            // if (params && params.indexOf("base") >= 0 /*&& parent_object*/) {
-            //     // var id = parent_object.objectId || 0;
-            //     // if (oop.objects.indexOf(id) < 0) 
-            //     //     oop.objects[id] = parent_object;
-
-            //     var inject_param_base = "oop.objects[" + id +"]";
-            //     var inject_params     = ".apply(this,(function() { \n" + 
-            //         "var a=Array.prototype.slice.call((arguments[0] || [])); \n" + 
-            //         "a.push(" + inject_param_base + ");return a; })(arguments));";
-            //     var inject_body       = "(" + target.toString() + ")" + inject_params;
-            //     var inject_func       = Function.call(this, inject_body);
-            //     target                = inject_func;
-            //     LOG(inject_body);
-            // }
+            target = injectMethod(target);
             type.prototype[p.name] = target;
             return;
         } else {
-            LOG("[set function] ", p.name);
+            LOG("[set else] ", p.name);
+            type.prototype[p.name] = target;
+            return;
         }
     }
 
     var getFunctionParameters = function(func) {
         var pattern = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
+        var pattern_comment = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/gm;
         var match = pattern.exec(func.toString());
         if (!match) return null;
-        var params = match[1].replace(/ /g, "").split(',');
+        var params = match[1].replace(/ /g, "").replace(pattern_comment, "").split(',');
         return params;
     };
 
+    var getFunctionBody = function(func) { 
+        var pattern = /[^{]{((?:[^}])|(?:[^{]))*}[^}]/gm;
+        return func.toString().match(pattern)[0].trim().substring(2)
+    };
+
+    var surroundTryCatch = function(func, exceptionFunc) {
+        if (!func && !exceptionFunc) return "";
+
+        return "\ntry {"
+             + func
+             + "} catch(err) { " + (exceptionFunc || "throw err;") + "}";
+    };
+
+    var surroundTryCatchFinally = function(func, exceptionFunc, finallyFunc) {
+        if (!func && !exceptionFunc && !finallyFunc) return "";
+
+        return "\ntry {"
+             + func
+             + "} catch(err) { " + (exceptionFunc || "throw err;") + "} "
+             + (finallyFunc ? "finally { " + (finallyFunc || "") + " }" : "");
+    };
+
+    var surroundBehavior = function(func, behavior) {
+        DEBUG(behavior);
+        behavior          = behavior || {};
+        var enteringFunc  = surroundTryCatch(immediateFunc(behavior.before || ""));
+        var proc_func     = surroundTryCatch(func);
+        var enterFunc     = surroundTryCatch(immediateFunc(behavior.after || ""));
+        var exceptionFunc = surroundTryCatchFinally(enteringFunc+proc_func+enterFunc, immediateFunc(behavior.exception), immediateFunc(behavior.finally));
+        return exceptionFunc;
+    };
+
+    var Interception = function(func, behavior) {
+        func = getFunctionBody(func);
+        var behaviorFunc = surroundBehavior(func, behavior);
+        func = behaviorFunc;
+
+        var f = new Function(func);
+        DEBUG(f);
+        return f;
+    };
+
+    function immediateFunc(func, args) {
+        args = args || []; 
+        if (!func) return "";
+
+        var func_body = "";
+        var func_args = "";
+        if (func) {
+            //if (!isFunction(func) || func.toString().indexOf("function") != 0) { func_body += "(function() {"; }
+            func_body = "(" + func + ")";
+            if (args) { func_args = "(" + args.join(",") + ")"; }
+            //if (!isFunction(func) || func.toString().indexOf("function") != 0) { func_body += "})();"; }
+        }
+
+        return func_body + func_args;
+    };
+
+    var injectMethod = function(m, b) {
+        var p                = getFunctionParameters(m);
+        var func_param       = [];
+        var func_param_ahead = [];
+
+        if (p && p.length > 0) {
+            for(var i=0; i<p.length; i++) {
+                if (p[i] == "base") func_param.push("this.__base__");
+                else {
+                    func_param.push(p[i]);
+                    func_param_ahead.push(p[i]);
+                }
+            }
+        }
+
+        var func_body = immediateFunc(m, func_param);
+        func_body     = surroundTryCatch(func_body);
+
+        var func      = new Function(func_param_ahead.join(","), func_body);
+        return func;
+    }
+
     var Inject = function() {
         var methods = Array.prototype.slice.apply(arguments, []);
+        var ret = [];
         for(var m in methods) {
             m = methods[m];
             p = getFunctionParameters(m);
-            DEBUG("[oop.inject] ", p);
+            ret.push(injectMethod(p, m));
         }
+        return ret;
+    };
+
+    var InterceptionBehavior = function(before, after, exception, finally_) {
+        
+        this.before     = before;
+        this.after      = after;
+        this.finally_   = finally_;
+        this.exception  = exception;
+
+        return {
+            "before"   : this.before,
+            "after"    : this.after,
+            "finally"  : this.finally_,
+            "exception": this.exception
+        };
     };
 
     var Class = function(parents, classInfo) {
@@ -145,27 +229,23 @@ oop = (function() {
             classInfo = parents; 
             parents = undefined;
         }
-
+        
         var parent_object;
         var self_arguments = arguments;
         var self           = this;
         var type           = this.constructor;
         var ret            = {};
-
-        var clazz_definition = getClassFromLiterals(classInfo);
+        var clazz_def      = getClassFromLiterals(classInfo);
 
         for(var parent in arrParents) {
             parent = arrParents[parent];
             parent = (self.constructor && self.constructor.name !== "Window") ? parent : undefined;
             if (parent) { 
-                oop.extend(parent, clazz_definition)
+                oop.extend(parent, clazz_def)
             }
         }
 
-        return clazz_definition;
-
-
-        return ret;
+        return clazz_def;
     };
 
     return {
@@ -174,7 +254,6 @@ oop = (function() {
             (function() {
                 if (parent) {
                     parent_object = Object.create(parent.prototype);
-                    clazz.prototype.__base__ = parent_object;
                 }
                 if (clazz.init) { 
                     clazz.init.apply(self, arguments);
@@ -183,6 +262,7 @@ oop = (function() {
 
             for(var p in parent_object) { if (parent.prototype.hasOwnProperty(p)) { clazz.prototype[p] = parent_object[p]; } }
             clazz.prototype.constructor = clazz;
+            clazz.prototype.__base__ = parent_object;
 
             return clazz;
         },
@@ -192,8 +272,11 @@ oop = (function() {
         inject: function(method) {
             return Inject.apply(this, arguments);
         },
-        injectBehavior : function(before, after, exception, finally_) {
-            return InjectBehavior.apply(arguments);
+        interceptionBehavior : function(before, after, exception, finally_) {
+            return InterceptionBehavior(before, after, exception, finally_);
+        },
+        interception: function(func, behavior) {
+            return Interception(func, behavior);
         },
         getset: function(get, set) {
             this.get = get;
@@ -207,6 +290,27 @@ oop = (function() {
     }
 
 })();
+
+(function(oop) {
+    oop.behaviors = {
+            LoggingBehavior: oop.interceptionBehavior(function() { 
+                                                                    console.log("------ enter interception ------")
+                                                                    if (!this.date) {
+                                                                        this.date = new Date(); 
+                                                                        options = {
+                                                                          year: 'numeric', month: 'numeric', day: 'numeric',
+                                                                          hour: 'numeric', minute: 'numeric', second: 'numeric',
+                                                                          hour12: false
+                                                                        };
+                                                                    }
+                                                                    console.log("["+this.date.toLocaleString('en-US', this.options)+"] ", arguments);
+                                                                },
+                                                                function() { 
+                                                                    console.log("------ end interception ------")
+                                                                }, undefined,undefined),
+            ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
+        };
+})(oop);
 
 /*
 var IProgram = oop.public.class({
@@ -237,13 +341,14 @@ var IProgram1 = oop.class({
 });
 
 var IProgram2 = oop.class(IProgram1, {
-    interface2: function(base) { console.log("IProgram2.prototype.interface2"); base.interface1(); },
-    interface3: function(base) { console.log("IProgram2.prototype.interface3"); }
+    interface2: function(a, b, base) { console.log("IProgram2.prototype.interface2 "); base.interface1(); },
+    interface3: function(base) { console.log("IProgram2.prototype.interface3"); },
+    Name: "A"
 });
-/*
+
 var Program1 = oop.class(IProgram2, {
     interface3: function(arg1, arg2, base) { console.log("Program1.prototype.interface3"); },
-    interface4: function() { console.log("Program1.prototype.interface4"); },
+    interface4: function(base) { console.log("Program1.prototype.interface4"); console.log("[base] ", base); base.interface2(); },
     static: {
         Name: "POWERUMC",
         getName: function() { return this.Name; }
@@ -253,12 +358,14 @@ var Program1 = oop.class(IProgram2, {
         set: function(value) { this._name = value; }
     }
 });
-*/
+
 // var Program2 = oop.class(Program1, {
 //     interface5: function() { console.log("Program2.prototype.interface5"); }
 // });
 
-var p1 = new IProgram2();
-DEBUG(oop.inject(p1.interface1));
-TRACE(p1);
-// 
+var p1 = new Program1();
+//DEBUG(p1.interface4);
+//DEBUG(oop.interception(p1.interface4, oop.behaviors.LoggingBehavior));
+
+p1.interface4 = oop.interception(p1.interface4, oop.behaviors.LoggingBehavior);
+p1.interface4();
