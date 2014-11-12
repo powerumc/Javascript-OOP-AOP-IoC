@@ -95,7 +95,10 @@ oop = (function() {
         if (isFunction(target)) {
             LOG("[set function] ", p.name);
             target = injectMethod(target);
+            target.name = p.name;
             type.prototype[p.name] = target;
+            type.prototype[p.name].prototype.name = p.name;
+            type.prototype[p.name].constructor = type;
             return;
         } else {
             LOG("[set else] ", p.name);
@@ -109,7 +112,7 @@ oop = (function() {
         var pattern_comment = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/gm;
         var match = pattern.exec(func.toString());
         if (!match) return null;
-        var params = match[1].replace(/ /g, "").replace(pattern_comment, "").split(',');
+        var params = match[1].replace(/ |\n/g, "").replace(pattern_comment, "").split(',');
         return params;
     };
 
@@ -136,23 +139,29 @@ oop = (function() {
     };
 
     var surroundBehavior = function(func, behavior) {
-        DEBUG(behavior);
         behavior          = behavior || {};
-        var enteringFunc  = surroundTryCatch(immediateFunc(behavior.before || ""));
+        var beforeFunc    = surroundTryCatch(immediateFunc(behavior.before || ""));
         var proc_func     = surroundTryCatch(func);
-        var enterFunc     = surroundTryCatch(immediateFunc(behavior.after || ""));
-        var exceptionFunc = surroundTryCatchFinally(enteringFunc+proc_func+enterFunc, immediateFunc(behavior.exception), immediateFunc(behavior.finally));
+        var afterFunc     = surroundTryCatch(immediateFunc(behavior.after || ""));
+        var exceptionFunc = surroundTryCatchFinally(beforeFunc+proc_func+afterFunc, immediateFunc(behavior.exception), immediateFunc(behavior.finally));
         return exceptionFunc;
     };
 
-    var Interception = function(func, behavior) {
-        func = getFunctionBody(func);
-        var behaviorFunc = surroundBehavior(func, behavior);
-        func = behaviorFunc;
+    var InterceptionFunc = function(func, behavior) {
+        var params       = getFunctionParameters(func);
+        var proxyFunc    = getFunctionBody(func);
+        var behaviorFunc = surroundBehavior(proxyFunc, behavior);
+        proxyFunc        = behaviorFunc;
 
-        var f = new Function(func);
-        DEBUG(f);
-        return f;
+        var interceptionFunc         = new Function(params.join(","), proxyFunc);
+        interceptionFunc.constructor = func.constructor;
+        interceptionFunc.prototype   = func.prototype;
+        interceptionFunc.constructor.prototype[interceptionFunc.prototype.name] = interceptionFunc;
+    };
+
+    var Interception = function(func, behavior) {
+        if (isFunction(func)) InterceptionFunc(func, behavior);
+
     };
 
     function immediateFunc(func, args) {
@@ -240,6 +249,9 @@ oop = (function() {
         for(var parent in arrParents) {
             parent = arrParents[parent];
             parent = (self.constructor && self.constructor.name !== "Window") ? parent : undefined;
+
+
+
             if (parent) { 
                 oop.extend(parent, clazz_def)
             }
@@ -260,9 +272,9 @@ oop = (function() {
                 }
             })();
 
-            for(var p in parent_object) { if (parent.prototype.hasOwnProperty(p)) { clazz.prototype[p] = parent_object[p]; } }
+            for(var p in parent_object) { if (!clazz.prototype[p]) { clazz.prototype[p] = parent_object[p]; } }
             clazz.prototype.constructor = clazz;
-            clazz.prototype.__base__ = parent_object;
+            clazz.prototype.__base__    = parent_object;
 
             return clazz;
         },
@@ -312,24 +324,6 @@ oop = (function() {
         };
 })(oop);
 
-/*
-var IProgram = oop.public.class({
-    interface1: function() { console.log("IProgram.prototype.interface1();"); }
-});
-
-var Program = oop.public.class({
-    init: function() { console.log("Program.prototype.init()"); },
-    say: function(msg) { console.log("Hello " + msg); },
-    static: {
-        Version: "1.0.0",
-        Date: "2014-10-27"
-    },
-    Name: "Junil Um"
-});
-function a()
-
-function() { }
-*/
 
 var IFProgram = function() {
     this.NAME = "POWERUMC";
@@ -347,8 +341,8 @@ var IProgram2 = oop.class(IProgram1, {
 });
 
 var Program1 = oop.class(IProgram2, {
-    interface3: function(arg1, arg2, base) { console.log("Program1.prototype.interface3"); },
-    interface4: function(base) { console.log("Program1.prototype.interface4"); console.log("[base] ", base); base.interface2(); },
+    interface3: function(arg1, arg2, base) { console.log("Program1.prototype.interface3"); base.interface3(); },
+    interface4: function(base) { console.log("Program1.prototype.interface4"); base.interface2(); },
     static: {
         Name: "POWERUMC",
         getName: function() { return this.Name; }
@@ -359,13 +353,9 @@ var Program1 = oop.class(IProgram2, {
     }
 });
 
-// var Program2 = oop.class(Program1, {
-//     interface5: function() { console.log("Program2.prototype.interface5"); }
-// });
-
 var p1 = new Program1();
-//DEBUG(p1.interface4);
-//DEBUG(oop.interception(p1.interface4, oop.behaviors.LoggingBehavior));
+oop.interception(p1.interface3, oop.behaviors.LoggingBehavior);
+p1.interface3();
 
-p1.interface4 = oop.interception(p1.interface4, oop.behaviors.LoggingBehavior);
-p1.interface4();
+
+
