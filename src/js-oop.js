@@ -160,8 +160,12 @@ oop = (function() {
     };
 
     var Interception = function(func, behavior) {
-        if (isFunction(func)) InterceptionFunc(func, behavior);
-
+        if (isFunction(func)) { InterceptionFunc(func, behavior); }
+        else if (isObject(func) && func.constructor && func.constructor.name === "____") {
+            for(var p in func) {
+                if (isFunction(func[p])) { InterceptionFunc(func[p], behavior); }
+            }
+        }
     };
 
     function immediateFunc(func, args) {
@@ -249,9 +253,6 @@ oop = (function() {
         for(var parent in arrParents) {
             parent = arrParents[parent];
             parent = (self.constructor && self.constructor.name !== "Window") ? parent : undefined;
-
-
-
             if (parent) { 
                 oop.extend(parent, clazz_def)
             }
@@ -354,7 +355,7 @@ var Program1 = oop.class(IProgram2, {
 });
 
 var p1 = new Program1();
-oop.interception(p1.interface3, oop.behaviors.LoggingBehavior);
+oop.interception(p1, oop.behaviors.LoggingBehavior);
 p1.interface3();
 
 
