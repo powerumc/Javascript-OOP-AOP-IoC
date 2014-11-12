@@ -192,6 +192,7 @@ oop = (function() {
         if (p && p.length > 0) {
             for(var i=0; i<p.length; i++) {
                 if (p[i] == "base") func_param.push("this.__base__");
+                else if(p[i] == "self") func_param.push("this");
                 else {
                     func_param.push(p[i]);
                     func_param_ahead.push(p[i]);
@@ -354,9 +355,26 @@ var Program1 = oop.class(IProgram2, {
     }
 });
 
-var p1 = new Program1();
-oop.interception(p1, oop.behaviors.LoggingBehavior);
-p1.interface3();
+// var p1 = new Program1();
+// oop.interception(p1, oop.behaviors.LoggingBehavior);
+// p1.interface3();
 
 
 
+
+ var Program = oop.class({
+     version: "1.0.2",
+     show: function() { 
+         console.log("openning window."); 
+         /* some code.. */ }
+ });
+
+ // Define class.
+ var Outlook = oop.class( Program, {
+     run: function(self) { console.log("running excel program."); self.show(); }
+ });
+
+ // Execuable code.
+ var outlook = new Outlook();
+ console.log("version " + outlook.version);
+ outlook.run();
