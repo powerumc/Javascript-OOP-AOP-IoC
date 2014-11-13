@@ -9,20 +9,20 @@ Easily Javascript OOP Library
 
 1. Define class.
 
-	```js
-	var Program = oop.class({
-		say: function() { return "Hello"; }
-	});
-	
-	var p = new Program();
-	p.say();
+```js
+var Program = oop.class({
+    say: function() { return "Hello"; }
+});
 
-	// return "Hello"
-	```
+var p = new Program();
+p.say();
+
+// return "Hello"
+```
 
 2. Define properties.
 
-	1. Define basically properties.
+	- Define basically properties.
 
 		```js
 		// Define class.
@@ -38,7 +38,7 @@ Easily Javascript OOP Library
 		My name is 엄준일
 		```
 	
-	2. Define custom get/set property.
+	- Define custom get/set property.
 		```js
 		var Program = oop.class({
 			say: function() { return "Hello"; },
@@ -59,7 +59,7 @@ Easily Javascript OOP Library
 2. Inheritances
 ================
 
-1. Inheritance from parent.
+1. **Inheritance** from parent.
 
 	```js
 	// Define parent class
@@ -73,10 +73,10 @@ Easily Javascript OOP Library
 	
 	// Define class.
 	var Outlook = oop.class( Program, {
-		run: function() { console.log("running excel program."); }
+		run: function() { console.log("running outlook program."); }
 	});
 	
-    // Execuable code.
+    // Run code.
 	var outlook = new Outlook();
 	console.log("version " + outlook.version);
 	outlook.run();
@@ -84,11 +84,11 @@ Easily Javascript OOP Library
 	
 	// Output
 	version 1.0.2
-	running excel program.
+	running outlook program.
 	openning window.
 	```
 
-2. self reference.
+2. **self** instance reference.
 
 	```js
 	var Program = oop.class({
@@ -99,8 +99,8 @@ Easily Javascript OOP Library
 	});
 	
 	var Outlook = oop.class( Program, {
-		run: function(self) { 	// inject 'self' argument name.
-        	console.log("running excel program."); 
+		run: function(self) { // inject 'self' argument name.
+        	console.log("running outlook program."); 
             
             // *** HERE ***
             // a method call inhertianced Program.show method.
@@ -115,7 +115,85 @@ Easily Javascript OOP Library
 	
 	// Output
 	version 1.0.2
-	running excel program.
+	running outlook program.
 	openning window.
 	```
+
+3. **base** parent instance reference.
+
+    ```js
+    var Program = oop.class({
+        run: function() { console.log("run Program.") }
+    });
+
+    var Outlook = oop.class( Program, {
+        run: function(base) { 
+            console.log("run Outlook.");  
+
+            // *** HERE ***
+            // You can call parent method from base keyword.
+            base.run();
+        }
+    });
+
+    // Output
+    // run Outlook.
+    // run Program.
+    ```
+
+
+3. Interception - AOP
+======================
+
+1. Interception **a method**
+
+    ```js
+    var Program = oop.class({
+    	run: function(msg) { console.log("run Program. ", msg); }
+    });
+    
+    // *** HERE ***
+    // Setup the interception a method
+    var p = new Program();
+    oop.interception( p.run, oop.behaviors.LoggingBehavior );
+    
+    // Call a 'run' method.
+    p.run("Now running...");
+    
+    // Output
+    ------ enter interception ------
+    [Thu Nov 13 2014 09:29:41 GMT+0900 (KST)]  {}
+    run Program.  Now running...
+    ------ end interception ------
+    ```
+
+2. Interception **a class instance**.
+
+    ```js
+    var Program = oop.class({
+    	run: function() { console.log("run Program.", msg); },
+        terminate: function() { console.log("Terminated the Program.") }
+    });
+    
+    // *** HERE ***
+    // Pass class instance arguments
+    var p = new Program();
+    oop.interception( p, oop.behaviors.LoggingBehavior );
+    
+    // Call a 'run' method.
+    p.run("Now running...");
+    p.terminate();
+    
+    // Output
+    ------ enter interception ------
+    [Thu Nov 13 2014 09:29:41 GMT+0900 (KST)]  {}
+    run Program.  Now running...
+    Terminated the Program.
+    ------ end interception ------
+    ```
+
+
+
+
+
 
