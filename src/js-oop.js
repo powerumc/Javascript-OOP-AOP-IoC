@@ -5,11 +5,7 @@ var DEBUG = function() { (console.debug || console.warn).apply(console, argument
 var TRACE = function() { console.trace.apply(console, arguments); };
 var ERROR = function() { console.error.apply(console, arguments); };
 
-var ptn = 
-
 oop = (function() {
-    //Function.apply = function() { var a = Function.apply(arguments); a.objectId++;}
-
     (function() {
         var __id = 1;
         Object.defineProperty(Object.prototype, "__object_id", {
@@ -50,11 +46,11 @@ oop = (function() {
             LOG("[set static] ", pp);
             type[pp] = static_objects[pp];
         }
-    }
+    };
 
     var setProperty = function(self, propName, funcGet, funcSet) {
         Object.defineProperty(self, propName, { get: funcGet, set: funcSet });
-    }
+    };
 
     var getProperties = function(clazz) {
         var propList = [];
@@ -68,7 +64,7 @@ oop = (function() {
 
     var getClassFromLiterals = function(literals) {
         var props = getProperties(literals);
-        function ____() { };
+        function ____() { }
 
         for(var p in props) {
             setPropertySpecification(____, props[p]);
@@ -105,10 +101,10 @@ oop = (function() {
             type.prototype[p.name] = target;
             return;
         }
-    }
+    };
 
     var getFunctionParameters = function(func) {
-        var pattern = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
+        var pattern         = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
         var pattern_comment = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/gm;
         var match = pattern.exec(func.toString());
         if (!match) return [];
@@ -124,18 +120,13 @@ oop = (function() {
     var surroundTryCatch = function(func, exceptionFunc) {
         if (!func && !exceptionFunc) return "";
 
-        return "\ntry {"
-             + func
-             + "} catch(err) { " + (exceptionFunc || "throw err;") + "}";
+        return "\ntry {" + func + "} catch(err) { " + (exceptionFunc || "throw err;") + "}";
     };
 
     var surroundTryCatchFinally = function(func, exceptionFunc, finallyFunc) {
         if (!func && !exceptionFunc && !finallyFunc) return "";
 
-        return "\ntry {"
-             + func
-             + "} catch(err) { " + (exceptionFunc || "throw err;") + "} "
-             + (finallyFunc ? "finally { " + (finallyFunc || "") + " }" : "");
+        return "\ntry {" + func + "} catch(err) { " + (exceptionFunc || "throw err;") + "} " + (finallyFunc ? "finally { " + (finallyFunc || "") + " }" : "");
     };
 
     var surroundBehavior = function(func, behavior) {
@@ -143,15 +134,13 @@ oop = (function() {
         var beforeFunc    = surroundTryCatch(immediateFunc(behavior.before || ""));
         var proc_func     = surroundTryCatch(func);
         var afterFunc     = surroundTryCatch(immediateFunc(behavior.after || ""));
-        var exceptionFunc = surroundTryCatchFinally(beforeFunc+proc_func+afterFunc, immediateFunc(behavior.exception), immediateFunc(behavior.finally));
-        return exceptionFunc;
+        return surroundTryCatchFinally(beforeFunc + proc_func + afterFunc, immediateFunc(behavior.exception), immediateFunc(behavior.finally));
     };
 
     var InterceptionFunc = function(func, behavior) {
         var params       = getFunctionParameters(func);
         var proxyFunc    = getFunctionBody(func);
-        var behaviorFunc = surroundBehavior(proxyFunc, behavior);
-        proxyFunc        = behaviorFunc;
+        proxyFunc        = surroundBehavior(proxyFunc, behavior);
 
         DEBUG("params ", params);
 
@@ -205,9 +194,8 @@ oop = (function() {
         var func_body = immediateFunc(m, func_param);
         func_body     = surroundTryCatch(func_body);
 
-        var func      = new Function(func_param_ahead.join(","), func_body);
-        return func;
-    }
+        return new Function(func_param_ahead.join(","), func_body);
+    };
 
     var Inject = function() {
         var methods = Array.prototype.slice.apply(arguments, []);
