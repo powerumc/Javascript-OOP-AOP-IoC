@@ -111,9 +111,9 @@ oop = (function() {
         var pattern = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
         var pattern_comment = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/gm;
         var match = pattern.exec(func.toString());
-        if (!match) return null;
+        if (!match) return [];
         var params = match[1].replace(/ |\n/g, "").replace(pattern_comment, "").split(',');
-        return params;
+        return params || [];
     };
 
     var getFunctionBody = function(func) { 
@@ -152,6 +152,8 @@ oop = (function() {
         var proxyFunc    = getFunctionBody(func);
         var behaviorFunc = surroundBehavior(proxyFunc, behavior);
         proxyFunc        = behaviorFunc;
+
+        DEBUG("params ", params);
 
         var interceptionFunc         = new Function(params.join(","), proxyFunc);
         interceptionFunc.constructor = func.constructor;
@@ -354,27 +356,3 @@ var Program1 = oop.class(IProgram2, {
         set: function(value) { this._name = value; }
     }
 });
-
-// var p1 = new Program1();
-// oop.interception(p1, oop.behaviors.LoggingBehavior);
-// p1.interface3();
-
-
-
-
- var Program = oop.class({
-     version: "1.0.2",
-     show: function() { 
-         console.log("openning window."); 
-         /* some code.. */ }
- });
-
- // Define class.
- var Outlook = oop.class( Program, {
-     run: function(self) { console.log("running excel program."); self.show(); }
- });
-
- // Execuable code.
- var outlook = new Outlook();
- console.log("version " + outlook.version);
- outlook.run();
