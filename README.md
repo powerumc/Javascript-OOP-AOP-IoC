@@ -47,7 +47,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 		var Program = oop.class({
 			say: function() { return "Hello"; },
 			name: "엄준일",
-			age: { get: function() { return this._age; },
+			age: { get: function()      { return this._age; },
 				   set: function(value) { this._age = value; }
 		});
 	
@@ -183,6 +183,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 ======================
 
 - ### oop.interception( function, behavior )
+
 - ### oop.interceptionBehavior( before, after, exception, finally_ )
 
 1. Injection a class or method.
@@ -213,7 +214,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 
         ```js
         var Program = oop.class({
-            run: function() { console.log("run Program.", msg); },
+            run: function()       { console.log("run Program.", msg); },
             terminate: function() { console.log("Terminated the Program.") }
         });
 
