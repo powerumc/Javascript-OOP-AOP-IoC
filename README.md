@@ -3,6 +3,7 @@ Javascript-OOP
 
 Easily Javascript OOP Library
 
+![travis build results](https://travis-ci.org/powerumc/Javascript-OOP.svg?branch=master)
 
 1. Basic
 =========
