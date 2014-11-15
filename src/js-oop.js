@@ -1,11 +1,13 @@
 
 ;
-var LOG   = function() { console.log.apply(console, arguments); };
-var DEBUG = function() { (console.debug || console.warn).apply(console, arguments); };
-var TRACE = function() { console.trace.apply(console, arguments); };
-var ERROR = function() { console.error.apply(console, arguments); };
-
 oop = (function() {
+
+    var LOG   = function() { console.log.apply(console, arguments); };
+    var DEBUG = function() { (console.debug || console.warn).apply(console, arguments); };
+    var TRACE = function() { console.trace.apply(console, arguments); };
+    var ERROR = function() { console.error.apply(console, arguments); };
+
+
     (function() {
         var __id = 1;
         Object.defineProperty(Object.prototype, "__object_id", {
@@ -37,14 +39,13 @@ oop = (function() {
     }
 
     function isStatic(obj) {
-
+        return typeof obj === "string" && obj === "static";
     }
 
     var setStaticMethod = function(type, static_objects) {
-        for(var pp in static_objects) {
-            if (!static_objects.hasOwnProperty(pp)) continue;
-            LOG("[set static] ", pp);
-            type[pp] = static_objects[pp];
+        for(var p in static_objects) {
+            if (!static_objects.hasOwnProperty(p)) continue;
+            type[p] = static_objects[p];
         }
     };
 
@@ -76,20 +77,17 @@ oop = (function() {
     var setPropertySpecification = function(type, p) {
         var target = p.object;
 
-        if (p.name == "static") {
-            LOG("[set static] ", p.name);
+        if (isStatic(p.name)) {
             setStaticMethod(type, target);
             return;
         }
 
         if (isProperty(target)) {
-            LOG("[set property] ", p.name);
             setProperty(type.prototype, p.name, target.get, target.set);
             return;
         }
 
         if (isFunction(target)) {
-            LOG("[set function] ", p.name);
             target = injectMethod(target);
             target.name = p.name;
             type.prototype[p.name] = target;
@@ -97,7 +95,6 @@ oop = (function() {
             type.prototype[p.name].constructor = type;
             return;
         } else {
-            LOG("[set else] ", p.name);
             type.prototype[p.name] = target;
             return;
         }
@@ -166,14 +163,12 @@ oop = (function() {
         var func_body = "";
         var func_args = "";
         if (func) {
-            //if (!isFunction(func) || func.toString().indexOf("function") != 0) { func_body += "(function() {"; }
             func_body = "(" + func + ")";
             if (args) { func_args = "(" + args.join(",") + ")"; }
-            //if (!isFunction(func) || func.toString().indexOf("function") != 0) { func_body += "})();"; }
         }
 
         return func_body + func_args;
-    };
+    }
 
     var injectMethod = function(m, b) {
         var p                = getFunctionParameters(m);
@@ -320,10 +315,10 @@ oop = (function() {
 var IFProgram = function() {
     this.NAME = "POWERUMC";
     IFProgram.prototype.FUNC = function() { console.log("FUNC"); };
-}
+};
 
 var IProgram1 = oop.class({
-    interface1: function(base) { console.log("IProgram1.prototype.interface1"); },
+    interface1: function(base) { console.log("IProgram1.prototype.interface1"); }
 });
 
 var IProgram2 = oop.class(IProgram1, {
@@ -343,4 +338,15 @@ var Program1 = oop.class(IProgram2, {
         get: function() { return this._name; },
         set: function(value) { this._name = value; }
     }
+});
+
+var customBehavior = oop.interceptionBehavior(
+    function() { console.log("before"); },
+    function() { console.log("after"); },
+    function() { console.log("throw exception", err); },
+    function() { console.log("finally"); }
+);
+
+var Program = oop.class({
+    run: function() { console.log("run Program."); throw "crashing... "; }
 });
