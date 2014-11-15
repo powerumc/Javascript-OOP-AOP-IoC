@@ -1,11 +1,8 @@
 {
-  "name": "Javascript-OOP-AOP",
+  "name": "javascript-oop-aop",
   "version": "1.0.0",
-  "description": "Easily Javascript OOP Library",
-  "main": "src/js-oop.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "Easily Javascript OOP, AOP Library",
+  "main": "./src/js-oop.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/powerumc/Javascript-OOP.git"
@@ -31,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/powerumc/Javascript-OOP/issues"
   },
-  "homepage": "https://github.com/powerumc/Javascript-OOP"
+  "homepage": "https://github.com/powerumc/Javascript-OOP",
+  "scripts": {
+    "test": ""
+  }
 }
