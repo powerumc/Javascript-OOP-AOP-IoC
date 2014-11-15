@@ -1,0 +1,33 @@
+{
+  "name": "Javascript-OOP-AOP-IoC",
+  "version": "1.0.2",
+  "homepage": "https://github.com/powerumc/Javascript-OOP-AOP-IoC",
+  "authors": [
+    "Junil Um <powerumc@gmail.com>"
+  ],
+  "description": "Easily Javascript OOP, AOP, IoC Library",
+  "main": "./src/js-oop.js",
+  "keywords": [
+    "javascript",
+    "js",
+    "oop",
+    "object",
+    "orientied",
+    "programming",
+    "aop",
+    "interception",
+    "injection",
+    "ioc"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "moduleType": [
+    "node"
+  ]
+}
