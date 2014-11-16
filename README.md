@@ -1,9 +1,23 @@
-Javascript-OOP
-==============
+Javascript-OOP-AOP-IoC
+======================
 
 Easily Javascript OOP Library
 
 ![travis build results](https://travis-ci.org/powerumc/Javascript-OOP.svg?branch=master)
+
+# Install
+
+- npm
+
+```bash
+npm install javascript-oop-aop
+```
+
+- bower
+
+```bash
+bower install javascript-oop-aop-ioc
+```
 
 1. Basic
 =========
