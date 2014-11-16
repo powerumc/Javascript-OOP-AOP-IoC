@@ -169,7 +169,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 ### oop.inject( [argument], ... )
 
 1. Inject to pass arguments.
-
+	
 	```js
      var Program = oop.class({
 		version: "v1.0"
@@ -189,7 +189,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
      // Output
      base version: v1.0
      current version: v2.0
-    ```
+	```
 
 2. Inject to resolve container.
 
@@ -201,7 +201,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 
 - ### oop.interceptionBehavior( before, after, exception, finally_ )
 
-1. Injection a class or method.
+1. Interception a class or method.
 
     - Interception **a method**
 
@@ -250,7 +250,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
         ------ end interception ------
         ```
 
-2. Injection custom **behaviors**
+2. Interception custom **behaviors**
 
 	- Define the custom behavior
 
@@ -298,16 +298,3 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
     throw exception crashing...   // HERE exception behavior.
     finally
     ```
-
-
-
-
-
-
-
-
-
-
-
-
-
