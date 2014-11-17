@@ -1,6 +1,6 @@
 {
   "name": "javascript-oop-aop-ioc",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Easily Javascript OOP, AOP, IoC Library",
   "main": "./src/js-oop.js",
   "repository": {

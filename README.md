@@ -10,7 +10,7 @@ Easily Javascript OOP Library
 - npm
 
 ```bash
-npm install javascript-oop-aop
+npm install javascript-oop-aop-ioc
 ```
 
 - bower
