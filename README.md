@@ -3,7 +3,7 @@ Javascript-OOP-AOP-IoC
 
 Easily Javascript OOP Library
 
-![travis build results](https://travis-ci.org/powerumc/Javascript-OOP.svg?branch=master)
+![travis build results](https://travis-ci.org/powerumc/Javascript-OOP-AOP-IoC.svg?branch=master)
 
 # Install
 
@@ -162,12 +162,18 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
     // run Program.
     ```
 
-4. hierarchically Inheritances.
+4. Hierarchically Inheritances.
 
 	```js
-    var Program = oop.class( { run: function() { console.log("Program.run();");  }});
-    var ProgramBase = oop.class( Program, { run: function(base) { console.log("ProgramBase.run();"); base.run(); }});
-    var Outlook = oop.class( ProgramBase, { run: function(base) { console.log("Outlook.run();"); base.run(); }});
+    var Program = oop.class( { 
+    	run: function() { console.log("Program.run();");  
+    }});
+    var ProgramBase = oop.class( Program, { 
+    	run: function(base) { console.log("ProgramBase.run();"); base.run();
+    }});
+    var Outlook = oop.class( ProgramBase, { 
+    	run: function(base) { console.log("Outlook.run();"); base.run(); 
+    }});
     
     var outlook = new Outlook();
     outlook.run();
