@@ -162,6 +162,22 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
     // run Program.
     ```
 
+4. hierarchically Inheritances.
+
+	```js
+    var Program = oop.class( { run: function() { console.log("Program.run();");  }});
+    var ProgramBase = oop.class( Program, { run: function(base) { console.log("ProgramBase.run();"); base.run(); }});
+    var Outlook = oop.class( ProgramBase, { run: function(base) { console.log("Outlook.run();"); base.run(); }});
+    
+    var outlook = new Outlook();
+    outlook.run();
+    
+    // Output
+    Outlook.run();
+	ProgramBase.run();
+	Program.run(); 
+    ```
+
 
 3. Injection
 =============
