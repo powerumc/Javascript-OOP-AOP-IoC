@@ -1,6 +1,8 @@
 Javascript-OOP-AOP-IoC
 ======================
 
+[![Join the chat at https://gitter.im/powerumc/Javascript-OOP-AOP-IoC](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/powerumc/Javascript-OOP-AOP-IoC?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Easily Javascript OOP Library
 
 ![travis build results](https://travis-ci.org/powerumc/Javascript-OOP-AOP-IoC.svg?branch=master)
