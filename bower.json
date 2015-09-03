@@ -1,6 +1,6 @@
 {
   "name": "Javascript-OOP-AOP-IoC",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "homepage": "https://github.com/powerumc/Javascript-OOP-AOP-IoC",
   "authors": [
     "Junil Um <powerumc@gmail.com>"
@@ -26,8 +26,5 @@
     "bower_components",
     "test",
     "tests"
-  ],
-  "moduleType": [
-    "node"
   ]
 }
