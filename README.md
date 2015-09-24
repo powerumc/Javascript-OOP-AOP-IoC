@@ -5,6 +5,8 @@ Easily Javascript OOP Library
 
 ![travis build results](https://travis-ci.org/powerumc/Javascript-OOP-AOP-IoC.svg?branch=master)
 
+[![Image](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif "donate")](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=5MVU4AFQCD6LY&lc=KR&item_name=POWERUMC&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+
 # Install
 
 - npm
