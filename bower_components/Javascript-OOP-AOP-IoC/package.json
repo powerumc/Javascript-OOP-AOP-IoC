@@ -1,0 +1,33 @@
+{
+  "name": "javascript-oop-aop-ioc",
+  "version": "1.0.2",
+  "description": "Easily Javascript OOP, AOP, IoC Library",
+  "main": "./src/js-oop.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/powerumc/Javascript-OOP.git"
+  },
+  "keywords": [
+    "javascript",
+    "js",
+    "oop",
+    "Object",
+    "Orientied",
+    "Object",
+    "Orientied",
+    "Orogramming",
+    "AOP",
+    "IoC",
+    "interception",
+    "injection"
+  ],
+  "author": "Junil Um",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/powerumc/Javascript-OOP/issues"
+  },
+  "homepage": "https://github.com/powerumc/Javascript-OOP",
+  "scripts": {
+    "test": ""
+  }
+}

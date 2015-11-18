@@ -1,32 +1,6 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 Junil Um
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-github: https://github.com/powerumc/Javascript-OOP-AOP-IoC
-blog  : http://blog.powerumc.kr/
-*/
 
 ;
-var oop = (function() {
+oop = (function() {
 
     var LOG   = function() { console.log.apply(console, arguments); };
     var DEBUG = function() { (console.debug || console.warn).apply(console, arguments); };
@@ -318,10 +292,10 @@ var oop = (function() {
 
 (function(oop) {
     oop.behaviors = {
-            LoggingBehavior: oop.interceptionBehavior(function() {
-                                                                    this.date = new Date();
+            LoggingBehavior: oop.interceptionBehavior(function() { 
+                                                                    console.log("------ enter interception ------")
                                                                     if (!this.date) {
-                                                                    console.log(this.date.toLocaleString() + " [js.oop] LoggingBehavior Begin ");
+                                                                        this.date = new Date(); 
                                                                         options = {
                                                                           year: 'numeric', month: 'numeric', day: 'numeric',
                                                                           hour: 'numeric', minute: 'numeric', second: 'numeric',
@@ -331,7 +305,7 @@ var oop = (function() {
                                                                     console.log("["+this.date.toLocaleString('en-US', this.options)+"] ", arguments);
                                                                 },
                                                                 function() { 
-                                                                    console.log(this.date.toLocaleString() + " [js.oop] LoggingBehavior End ")
+                                                                    console.log("------ end interception ------")
                                                                 }, undefined,undefined),
             ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
         };

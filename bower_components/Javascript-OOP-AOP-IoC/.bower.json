@@ -6,14 +6,7 @@
     "Junil Um <powerumc@gmail.com>"
   ],
   "description": "Easily Javascript OOP, AOP, IoC Library",
-  "main": [
-	  "./src/js-oop.js"
-  ],
-  "moduleType": [
-          "amd",
-          "globals",
-	  "node"
-  ],		      
+  "main": "./src/js-oop.js",
   "keywords": [
     "javascript",
     "js",
@@ -33,5 +26,18 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "moduleType": [
+    "node"
+  ],
+  "_release": "1.0.3",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.0.3",
+    "commit": "10c7ab9a2fea98f8d8d7cda67c0fc4ae5a65204b"
+  },
+  "_source": "git://github.com/powerumc/Javascript-OOP-AOP-IoC.git",
+  "_target": "~1.0.3",
+  "_originalSource": "javascript-oop-aop-ioc",
+  "_direct": true
 }
