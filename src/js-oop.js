@@ -317,12 +317,114 @@ var oop = (function() {
 })();
 
 (function(oop) {
+    var msie = document.documentMode;
+    var createHttpRequest = function() {
+        if (window.ActiveXObject && msie && msie < 8) {
+            return new window.ActiveXObject("Microsoft.XMLHTTP");
+        } else if (window.XMLHttpRequest) {
+            return new XMLHttpRequest();
+        }
+    };
+    
+    var commonXhr = function(self) {
+        return {
+            open: function(method, url, isAsync) {
+                this.xhr = createHttpRequest();
+                this.xhr.open(method, url, isAsync);
+                return self;
+            },
+            send: function(data) { 
+                this.xhr.send(data || null);
+                return void(0);
+            },
+            success: function(callback) {
+                this.xhr.onload = function(e) { callback(e.target.response); };
+                return this;
+            },
+            error: function(callback) {
+                this.xhr.onerror = function(e) { callback(e.target.response); };
+                return this;
+            },
+            timeout: function(callback) {
+                this.ontimeout = function(e) { callback(e.target.response); };
+                return this;
+            }
+        };
+    };
+    
+    oop.xhr = {
+        "get": function(url, data, isAsync) {
+            isAsync = isAsync || true;
+            var xhr = commonXhr(xhr);
+            xhr.open.apply(xhr, ["get", url, isAsync]);
+            return xhr;
+        },
+        "post": function(url, data, isAsync) {
+            isAsync = isAsync || true;
+            var xhr = commonXhr(xhr);
+            xhr.open.apply(xhr, ["post", url, isAsync]);
+            return xhr;
+        }
+    };  
+})(oop);
+
+(function(oop) {
+    var require = function(url, callback) {
+        var source,
+            sourceKind;
+            
+        if (!url) return;
+            
+        if (url.endsWith(".js")) {
+            sourceKind = "js";
+            source = document.createElement("script");
+            source.type = "text/javascript";
+            source.src = url;
+        } else if (url.endsWith(".css")) {
+            sourceKind = "css";
+            source = document.createElement("link");
+            source.type = "text/css";
+            source.rel = "stylesheet";
+            source.href = url;
+        } else if (url.endsWith(".nexon")) {
+            sourceKind = "template";
+            var req = new XMLHttpRequest();
+            req.open("GET", url, true);
+            req.send(null);
+        }
+        
+        if (!source) return;
+        
+        if (source.readyState) {
+            if (source.onreadystatechange) {
+                if (source.readyState == "loaded" && source.readyState == "complete") {
+                    source.onreadystatechange = null;
+                }
+            }
+        }
+        else {
+            source.onload = function(e) {
+            }
+        }
+        
+        var dom = document.getElementsByTagName("head") || document.getElementsByTagName("body");
+        if (dom.length > 0) {
+            dom[0].appendChild(source);
+            if (callback) callback();
+        }
+    };
+    
+    oop.import = function() { require.apply(this, arguments); };
+    
+})(oop);
+
+(function(oop) {
     oop.behaviors = {
             LoggingBehavior: oop.interceptionBehavior(function() {
                                                                     this.date = new Date();
                                                                     if (!this.date) {
                                                                     console.log(this.date.toLocaleString() + " [js.oop] LoggingBehavior Begin ");
-                                                                        options = {
+                                                                    var options = {
                                                                           year: 'numeric', month: 'numeric', day: 'numeric',
                                                                           hour: 'numeric', minute: 'numeric', second: 'numeric',
                                                                           hour12: false
