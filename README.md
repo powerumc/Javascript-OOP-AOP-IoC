@@ -253,7 +253,7 @@ We can learn to define the classes so easily. ```oop.class(...)``` method is it.
 
         ```js
         var Program = oop.class({
-            run: function()       { console.log("run Program.", msg); },
+            run: function(msg)       { console.log("run Program.", msg); },
             terminate: function() { console.log("Terminated the Program.") }
         });
 
