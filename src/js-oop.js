@@ -63,6 +63,14 @@ var oop = (function() {
     function isArray(obj) {
         return typeof obj === "object" && obj.constructor.name === "Array";
     }
+    
+    function isString(obj) {
+        return typeof obj === "string";
+    }
+    
+    function isNumber(obj) {
+        return typeof obj === "number";
+    }
 
     function isStatic(obj) {
         return typeof obj === "string" && obj === "static";
@@ -311,6 +319,13 @@ var oop = (function() {
         set: function(value) { },
         static: function(static_objects) {
         },
+        isObject: isObject,
+        isFunction: isFunction,
+        isNumber: isNumber,
+        isString: isString,
+        isArray: isArray,
+        isProperty: isProperty,
+        isStatic: isStatic,
         objects: []
     }
 
@@ -352,69 +367,115 @@ var oop = (function() {
         };
     };
     
+    function getContentType(data) {
+        if (oop.isObject(data)) return "application/json";
+        else if (oop.isString(data) || oop.isNumber(data)) return "text/plain";
+        
+        return "text/xml";
+    }
+    
     oop.xhr = {
         "get": function(url, data, isAsync) {
             isAsync = isAsync || true;
             var xhr = commonXhr(xhr);
             xhr.open.apply(xhr, ["get", url, isAsync]);
+            xhr.xhr.setRequestHeader("Content-Type", getContentType(data));
+            xhr.xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
             return xhr;
         },
         "post": function(url, data, isAsync) {
             isAsync = isAsync || true;
             var xhr = commonXhr(xhr);
             xhr.open.apply(xhr, ["post", url, isAsync]);
+            xhr.xhr.setRequestHeader("Content-Type", getContentType(data));
+            xhr.xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
             return xhr;
         }
     };  
 })(oop);
 
 (function(oop) {
-    var require = function(url, callback) {
-        var source,
-            sourceKind;
+    var require = function(url, sourceKind, callback) {
+        var source;
             
         if (!url) return;
             
-        if (url.endsWith(".js")) {
-            sourceKind = "js";
+        if (sourceKind === "js") {
             source = document.createElement("script");
             source.type = "text/javascript";
             source.src = url;
-        } else if (url.endsWith(".css")) {
-            sourceKind = "css";
+        } else if (sourceKind === "css") {
             source = document.createElement("link");
             source.type = "text/css";
             source.rel = "stylesheet";
             source.href = url;
-        } else if (url.endsWith(".nexon")) {
-            sourceKind = "template";
-            var req = new XMLHttpRequest();
-            req.open("GET", url, true);
-            req.send(null);
+        } else if (sourceKind === "template") {
+            var xhr = oop.xhr.get(url, function(result) {
+                console.info(result);
+            })
+            .success(function(result) {
+                var uniqueId = getFilenameWithoutExtension(url);
+                if (!document.getElementById(uniqueId)) {
+
+                source = document.createElement("script");
+                source.type = "text/x-nexon-template";
+                source.id = uniqueId;
+                source.innerText = result;
+                
+                append();
+                }
+                
+                if (callback) callback(result);
+            })
+            .error(function(result) {
+                callback(result);
+            });
+            
+            xhr.send();
         }
         
         if (!source) return;
         
-        if (source.readyState) {
-            if (source.onreadystatechange) {
-                if (source.readyState == "loaded" && source.readyState == "complete") {
-                    source.onreadystatechange = null;
-                }
-            }
-        }
-        else {
-            source.onload = function(e) {
-            }
-        }
+        append();
         
-        var dom = document.getElementsByTagName("head") || document.getElementsByTagName("body");
-        if (dom.length > 0) {
-            dom[0].appendChild(source);
-            if (callback) callback();
+        function append() {
+            var dom = document.getElementsByTagName("head") || document.getElementsByTagName("body");
+            if (dom.length > 0) {
+                dom[0].appendChild(source);
+                if (callback) callback();
+            }
+        }
+
+        function getFilenameWithoutExtension(url) {
+            return url.split('/').pop().split('.')[0];
         }
     };
     
-    oop.import = function() { require.apply(this, arguments); };
+    oop.import = function(url, sourceKind, callback) {
+        sourceKind = sourceKind || "js";
+        require.call(this, url, sourceKind, callback);
+    };
+    
+})(oop);
+
+/**
+ * OOP Flow
+ */
+(function(oop) {
+    
+    
+    oop.flow = function(obj) {
+        return {
+            "then": function() {
+                console.info("then");
+                return this;
+            },
+            "with": function() {
+                console.info("then");
+                return this;
+            }
+        };
+    };
     
 })(oop);
 
