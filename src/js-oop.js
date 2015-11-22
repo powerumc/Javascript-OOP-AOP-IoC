@@ -331,7 +331,7 @@ var oop = (function() {
 
 })();
 
-(function(oop) {
+oop.xhr = (function(oop) {
     var msie = document.documentMode;
     var createHttpRequest = function() {
         if (window.ActiveXObject && msie && msie < 8) {
@@ -374,7 +374,7 @@ var oop = (function() {
         return "text/xml";
     }
     
-    oop.xhr = {
+    return {
         "get": function(url, data, isAsync) {
             isAsync = isAsync || true;
             var xhr = commonXhr(xhr);
@@ -394,52 +394,63 @@ var oop = (function() {
     };  
 })(oop);
 
-(function(oop) {
-    var require = function(url, sourceKind, callback) {
+oop.import = (function(url, sourceKind, callback, isLiteral, preHandler) {
+    var require = function(url, sourceKind, callback, isLiteral, preHandler) {
         var source;
-            
         if (!url) return;
-            
-        if (sourceKind === "js") {
-            source = document.createElement("script");
-            source.type = "text/javascript";
-            source.src = url;
-        } else if (sourceKind === "css") {
-            source = document.createElement("link");
-            source.type = "text/css";
-            source.rel = "stylesheet";
-            source.href = url;
-        } else if (sourceKind === "template") {
+        
+        isLiteral = isLiteral === undefined ? false : true;
+        
+        if (!sourceKind) {
+            var arr = url.split(".").slice(-1);
+            if (arr.length > 0) {
+                sourceKind = arr[0];
+            }
+        }
+        
+        if (!isLiteral) {
+            if (sourceKind === "js") {
+                source = document.createElement("script");
+                source.type = "text/javascript";
+                source.src = url;
+                
+                if (preHandler) preHandler(source);
+                append("head");
+            } else if (sourceKind === "css") {
+                source = document.createElement("link");
+                source.type = "text/css";
+                source.rel = "stylesheet";
+                source.href = url;
+                
+                if (preHandler) preHandler(source);
+                append("head");
+            }
+        } else {   
             var xhr = oop.xhr.get(url, function(result) {
                 console.info(result);
             })
             .success(function(result) {
+                result = result.replace("\n", "");
                 var uniqueId = getFilenameWithoutExtension(url);
                 if (!document.getElementById(uniqueId)) {
+                    source = document.createElement("script");
+                    source.id = uniqueId;
+                    source.innerHTML = result;
 
-                source = document.createElement("script");
-                source.type = "text/x-nexon-template";
-                source.id = uniqueId;
-                source.innerText = result;
-                
-                append();
+                    if (preHandler) preHandler(source);
+                    append("head");
                 }
                 
-                if (callback) callback(result);
             })
             .error(function(result) {
-                callback(result);
+                if (callback) callback(result);
             });
             
             xhr.send();
         }
-        
-        if (!source) return;
-        
-        append();
-        
-        function append() {
-            var dom = document.getElementsByTagName("head") || document.getElementsByTagName("body");
+
+        function append(nodeName) {
+            var dom = document.getElementsByTagName(nodeName) || document.getElementsByTagName("head");
             if (dom.length > 0) {
                 dom[0].appendChild(source);
                 if (callback) callback();
@@ -451,12 +462,16 @@ var oop = (function() {
         }
     };
     
-    oop.import = function(url, sourceKind, callback) {
-        sourceKind = sourceKind || "js";
-        require.call(this, url, sourceKind, callback);
-    };
+    require.call(this, url, sourceKind, callback, isLiteral, preHandler);
     
-})(oop);
+});
+
+oop.importTemplate = (function(url, callback) {
+    oop.import(url, "", callback, true, function(source) {
+        source.id = source.id + "-template"; 
+        source.type = "x-nexon-template"; 
+    });  
+});
 
 /**
  * OOP Flow
@@ -498,4 +513,5 @@ var oop = (function() {
                                                                 }, undefined,undefined),
             ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
         };
-})(oop);
+
+})(oop);  
