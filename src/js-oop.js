@@ -331,7 +331,7 @@ var oop = (function() {
 
 })();
 
-(function(oop) {
+oop.xhr = (function(oop) {
     var msie = document.documentMode;
     var createHttpRequest = function() {
         if (window.ActiveXObject && msie && msie < 8) {
@@ -374,7 +374,7 @@ var oop = (function() {
         return "text/xml";
     }
     
-    oop.xhr = {
+    return {
         "get": function(url, data, isAsync) {
             isAsync = isAsync || true;
             var xhr = commonXhr(xhr);
@@ -394,55 +394,72 @@ var oop = (function() {
     };  
 })(oop);
 
-(function(oop) {
-    var require = function(url, sourceKind, callback) {
+oop.import = (function(list) {
+    var require = function(define, onLoad) {
+        if (!define) return;
+        
         var source;
-            
-        if (!url) return;
-            
-        if (sourceKind === "js") {
-            source = document.createElement("script");
-            source.type = "text/javascript";
-            source.src = url;
-        } else if (sourceKind === "css") {
-            source = document.createElement("link");
-            source.type = "text/css";
-            source.rel = "stylesheet";
-            source.href = url;
-        } else if (sourceKind === "template") {
-            var xhr = oop.xhr.get(url, function(result) {
-                console.info(result);
-            })
-            .success(function(result) {
-                var uniqueId = getFilenameWithoutExtension(url);
-                if (!document.getElementById(uniqueId)) {
-
+        
+        define.isLiteral = define.isLiteral === undefined ? false : true;
+        
+        if (!define.sourceKind) {
+            var arr = define.url.split(".").slice(-1);
+            if (arr.length > 0) {
+                define.sourceKind = arr[0];
+            }
+        }
+        
+        if (!define.isLiteral) {
+            if (define.sourceKind === "js") {
                 source = document.createElement("script");
-                source.type = "text/x-nexon-template";
-                source.id = uniqueId;
-                source.innerText = result;
-                
-                append();
+                source.type = "text/javascript";
+                source.src = define.url;
+                if (!define.async) { 
+                    source.onload = onLoad;
                 }
                 
-                if (callback) callback(result);
+                if (define.preHandler) define.preHandler(source);
+                append("head");
+            } else if (define.sourceKind === "css") {
+                source = document.createElement("link");
+                source.type = "text/css";
+                source.rel = "stylesheet";
+                source.href = define.url;
+                if (!define.async) { 
+                    source.onload = onLoad;
+                }
+                
+                if (define.preHandler) define.preHandler(source);
+                append("head");
+            }
+        } else {   
+            var xhr = oop.xhr.get(define.url, function(result) {
+            })
+            .success(function(result) {
+                result = result.replace("\n", "");
+                var uniqueId = getFilenameWithoutExtension(define.url);
+                if (!document.getElementById(uniqueId)) {
+                    source = document.createElement("script");
+                    source.id = uniqueId;
+                    source.innerHTML = result;
+
+                    if (define.preHandler) define.preHandler(source);
+                    append("head");
+                }
+                
             })
             .error(function(result) {
-                callback(result);
+                if (define.callback) define.callback(result, define);
             });
             
             xhr.send();
         }
-        
-        if (!source) return;
-        
-        append();
-        
-        function append() {
-            var dom = document.getElementsByTagName("head") || document.getElementsByTagName("body");
+
+        function append(nodeName) {
+            var dom = document.getElementsByTagName(nodeName) || document.getElementsByTagName("head");
             if (dom.length > 0) {
                 dom[0].appendChild(source);
-                if (callback) callback();
+                if (define.callback) define.callback(source, define);
             }
         }
 
@@ -451,12 +468,76 @@ var oop = (function() {
         }
     };
     
-    oop.import = function(url, sourceKind, callback) {
-        sourceKind = sourceKind || "js";
-        require.call(this, url, sourceKind, callback);
-    };
+    function c(obj, onLoad) {
+        if (!obj) return;
+        
+        if (oop.isString(obj)) { require( {"url": list[i] }); }
+        else {
+            if (obj.dependsOn) {
+                if (!oop.isArray(obj.dependsOn)) {
+                    throw "dependsOn must be array."
+                }
+                var callback = function(nestedObj) {
+                    for(var d=0; d<nestedObj.dependsOn.length; d++) {
+                        c(nestedObj.dependsOn[d]);
+                    }
+                };
+                
+                require(obj, function() { callback(obj); });
+                
+            } else {
+                require(obj);
+            }
+        }
+    }
     
-})(oop);
+    for(var i=0; i<list.length; i++) {
+        c(list[i]);
+    }
+    
+});
+
+oop.importTemplate = (function(list, callback) {
+    var loaded = 0;
+    var count = 0;
+    for(var i=0; i<list.length; i++) {
+        var objTemplate = {
+            url: list[i], isLiteral:true, preHandler: function(source) {
+                source.type = "x-nexon-template"; 
+                source.id += "-template";
+                source.attributes["data-order"] = count++;
+            },
+            order: i,
+            callback: function(result, define) {
+                loaded++;
+                result.attributes["data-order"] = define.order;
+                
+                if (loaded == list.length) {
+                    if (callback) callback(getTemplates("x-nexon-template"));
+                } 
+            }
+        };
+        oop.import([objTemplate]);
+    }
+    
+    function getTemplates(scriptType) {
+        scriptType = scriptType || "x-nexon-template";
+        
+        var arr = [];
+        var scripts = document.getElementsByTagName("script");
+        for(var i=0; i<scripts.length; i++) {
+            if (scripts[i].type != scriptType) continue;
+            
+            arr.push(scripts[i]);
+        }
+        
+        return arr.sort(function(a,b) {
+            var aa = a.attributes["data-order"];
+            var bb = b.attributes["data-order"];
+            return aa < bb ? -1 : aa > bb ? 1 : 0;
+        });
+    }
+});
 
 /**
  * OOP Flow
@@ -467,11 +548,9 @@ var oop = (function() {
     oop.flow = function(obj) {
         return {
             "then": function() {
-                console.info("then");
                 return this;
             },
             "with": function() {
-                console.info("then");
                 return this;
             }
         };
@@ -484,18 +563,19 @@ var oop = (function() {
             LoggingBehavior: oop.interceptionBehavior(function() {
                                                                     this.date = new Date();
                                                                     if (!this.date) {
-                                                                    console.log(this.date.toLocaleString() + " [js.oop] LoggingBehavior Begin ");
+                                                                    LOG(this.date.toLocaleString() + " [js.oop] LoggingBehavior Begin ");
                                                                     var options = {
                                                                           year: 'numeric', month: 'numeric', day: 'numeric',
                                                                           hour: 'numeric', minute: 'numeric', second: 'numeric',
                                                                           hour12: false
                                                                         };
                                                                     }
-                                                                    console.log("["+this.date.toLocaleString('en-US', this.options)+"] ", arguments);
+                                                                    LOG("["+this.date.toLocaleString('en-US', this.options)+"] ", arguments);
                                                                 },
                                                                 function() { 
-                                                                    console.log(this.date.toLocaleString() + " [js.oop] LoggingBehavior End ")
+                                                                    LOG(this.date.toLocaleString() + " [js.oop] LoggingBehavior End ")
                                                                 }, undefined,undefined),
             ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
         };
-})(oop);
+
+})(oop);  
