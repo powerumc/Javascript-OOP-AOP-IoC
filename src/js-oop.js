@@ -61,7 +61,7 @@ var oop = (function() {
     }
 
     function isArray(obj) {
-        return typeof obj === "object" && obj.constructor.name === "Array";
+        return (typeof obj === "object" && obj.constructor.name === "Array") || (Array.isArray && Array.isArray(obj));
     }
     
     function isString(obj) {
@@ -578,4 +578,4 @@ oop.importTemplate = (function(list, callback) {
             ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
         };
 
-})(oop);  
+})(oop);
