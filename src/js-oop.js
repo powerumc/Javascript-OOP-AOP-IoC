@@ -25,13 +25,15 @@ github: https://github.com/powerumc/Javascript-OOP-AOP-IoC
 blog  : http://blog.powerumc.kr/
 */
 
-;
-var oop = (function() {
 
-    var LOG   = function() { console.log.apply(console, arguments); };
-    var DEBUG = function() { (console.debug || console.warn).apply(console, arguments); };
-    var TRACE = function() { console.trace.apply(console, arguments); };
-    var ERROR = function() { console.error.apply(console, arguments); };
+
+var LOG   = LOG || function() { console.log.apply(console, arguments); };
+var DEBUG = DEBUG || function() { (console.debug || console.warn).apply(console, arguments); };
+var TRACE = TRACE || function() { console.trace.apply(console, arguments); };
+var ERROR = ERROR || function() { console.error.apply(console, arguments); };
+
+
+var oop = (function() {
 
 
     (function() {
@@ -135,7 +137,8 @@ var oop = (function() {
     };
 
     var getFunctionParameters = function(func) {
-        var pattern         = /function[\s\w]*\(([(\w\s, ^\/\*,) ]+)\)/g;
+        if (!func) return [];
+        var pattern         = /function[\s\w]*\(([($\w\s, ^\/\*,) ]+)\)/g;
         var pattern_comment = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/gm;
         var match = pattern.exec(func.toString());
         if (!match) return [];
@@ -204,7 +207,7 @@ var oop = (function() {
         return func_body + func_args;
     }
 
-    var injectMethod = function(m, b) {
+    var injectMethod = function(m, b, o) {
         var p                = getFunctionParameters(m);
         var func_param       = [];
         var func_param_ahead = [];
@@ -214,7 +217,8 @@ var oop = (function() {
                 if (p[i] == "base") func_param.push("this.__base__");
                 else if(p[i] == "self") func_param.push("this");
                 else {
-                    func_param.push(p[i]);
+                    var name = (o.prefix || "") + p[i] + (o.suffix || "");
+                    func_param.push(name);
                     func_param_ahead.push(p[i]);
                 }
             }
@@ -227,13 +231,14 @@ var oop = (function() {
     };
 
     var Inject = function() {
-        var methods = Array.prototype.slice.apply(arguments, []);
+        var m = Array.prototype.slice.apply(arguments, [])[0];
+        var o = arguments.length > 1 ? arguments[1] : null;
         var ret = [];
-        for(var m in methods) {
-            m = methods[m];
+        //for(var m in methods) {
+            //m = methods[m];
             p = getFunctionParameters(m);
-            ret.push(injectMethod(p, m));
-        }
+            ret.push(injectMethod(m, p, o));
+        //}
         return ret;
     };
 
@@ -326,10 +331,41 @@ var oop = (function() {
         isArray: isArray,
         isProperty: isProperty,
         isStatic: isStatic,
-        objects: []
+        objects: [],
+        globals: {}
     }
 
 })();
+
+
+
+(function(oop) {
+    var msie = document.documentMode;
+    function createEvent(name, arg) {
+
+        var event;
+        if (msie && msie>0 && document.createEvent) {
+            //throw "should be implement to createEvent method"
+            event = document.createEvent("CustomEvent", {detail: arg});
+            event.initEvent(name, true, true);
+        } else if (window.CustomEvent) {
+            event = new CustomEvent(name, {detail: arg});
+        }
+
+        return event;
+    }
+
+    oop.subscribe = function(name, callback) {
+        window.addEventListener(name, callback, false);
+    };
+
+    oop.publish = function(name, arg) {
+        window.dispatchEvent(createEvent(name, arg));
+    };
+
+})(oop);
+
+
 
 oop.xhr = (function(oop) {
     var msie = document.documentMode;
@@ -353,20 +389,21 @@ oop.xhr = (function(oop) {
                 return void(0);
             },
             success: function(callback) {
-                this.xhr.onload = function(e) { callback(e.target.response); };
+                this.xhr.onload = function(e) { callback(e.target.response || e.target.responseText); /* ie9 */ };
                 return this;
             },
             error: function(callback) {
-                this.xhr.onerror = function(e) { callback(e.target.response); };
+                this.xhr.onerror = function(e) { callback(e.target.response || e.target.responseText); };
                 return this;
             },
             timeout: function(callback) {
-                this.ontimeout = function(e) { callback(e.target.response); };
+                this.ontimeout = function(e) { callback(e.target.response || e.target.responseText); };
                 return this;
             }
         };
     };
     
+    var mimeTypes = [];
     function getContentType(data) {
         if (oop.isObject(data)) return "application/json";
         else if (oop.isString(data) || oop.isNumber(data)) return "text/plain";
@@ -390,16 +427,47 @@ oop.xhr = (function(oop) {
             xhr.xhr.setRequestHeader("Content-Type", getContentType(data));
             xhr.xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
             return xhr;
+        },
+        "getMimeType": function(ext) {
+            for(var i=mimeTypes.length-1; i>=0; i--) {
+                if (mimeTypes[i].ext === ext) 
+                    return mimeTypes[i].mimeType;
+            }
+            return null; 
+        },
+        "setMimeType": function(ext, mimeType) {
+            mimeTypes.push({"ext":ext, "mimeType": mimeType});
+            return this;
         }
+        
     };  
 })(oop);
 
-oop.import = (function(list) {
-    var require = function(define, onLoad) {
+(function() {
+oop.xhr.setMimeType("js", "text/javascript")
+       .setMimeType("css", "text/css")
+       .setMimeType("html", "text/html");
+
+oop.subscribe("js.oop.imported");
+oop.subscribe("js.oop.importingAllCompleted", loaded);
+window.onload = loaded;
+oop.globals.imported = [];
+function loaded(o) {
+    for(var i=0; i<oop.globals.ready.length; i++) {
+        var fn = oop.globals.ready.splice(0,1);
+        fn[0].call(this);
+    }
+}
+})();
+
+oop.import = (function(list, callback) {
+    oop.globals.importedCount = (oop.globals.importedCount || 0)+1;
+    oop.globals.enabledImportingCount = true;
+
+    function require(define, onLoad) {
         if (!define) return;
         
         var source;
-        
         define.isLiteral = define.isLiteral === undefined ? false : true;
         
         if (!define.sourceKind) {
@@ -412,39 +480,53 @@ oop.import = (function(list) {
         if (!define.isLiteral) {
             if (define.sourceKind === "js") {
                 source = document.createElement("script");
-                source.type = "text/javascript";
+                source.type = oop.xhr.getMimeType("js");
                 source.src = define.url;
                 if (!define.async) { 
                     source.onload = onLoad;
                 }
                 
+                source.id = getFilenameWithoutExtension(define.url);
+                source.attributes["data-id"] = source.id;
+                source.attributes["data-order"] = define.order;
                 if (define.preHandler) define.preHandler(source);
                 append("head");
+                
             } else if (define.sourceKind === "css") {
                 source = document.createElement("link");
-                source.type = "text/css";
+                source.type = oop.xhr.getMimeType("css");
                 source.rel = "stylesheet";
                 source.href = define.url;
-                if (!define.async) { 
-                    source.onload = onLoad;
-                }
+                source.attributes["data-order"] = define.order;
+                if (!define.async) { source.onload = onLoad; }
                 
                 if (define.preHandler) define.preHandler(source);
                 append("head");
+                
+            } else {
+                loadFrom(define);
             }
         } else {   
+            loadFrom(define);
+        }
+        
+        function loadFrom(define) {
             var xhr = oop.xhr.get(define.url, function(result) {
             })
             .success(function(result) {
-                result = result.replace("\n", "");
+                result = (result || "").replace("\n", "");
                 var uniqueId = getFilenameWithoutExtension(define.url);
                 if (!document.getElementById(uniqueId)) {
                     source = document.createElement("script");
-                    source.id = uniqueId;
                     source.innerHTML = result;
-
+                    source.type = oop.xhr.getMimeType(define.url.split(".").pop());
+                    source.id = uniqueId + "-template";
+                    source.attributes["data-order"] = define.order;
+                    
                     if (define.preHandler) define.preHandler(source);
                     append("head");
+                    
+                    if (onLoad) onLoad();
                 }
                 
             })
@@ -456,6 +538,7 @@ oop.import = (function(list) {
         }
 
         function append(nodeName) {
+            sourceList.push(source);
             var dom = document.getElementsByTagName(nodeName) || document.getElementsByTagName("head");
             if (dom.length > 0) {
                 dom[0].appendChild(source);
@@ -464,29 +547,82 @@ oop.import = (function(list) {
         }
 
         function getFilenameWithoutExtension(url) {
-            return url.split('/').pop().split('.')[0];
+            return url.split('/').pop().split('.').slice(0,-1).join(".");
         }
-    };
+    }
+    
+    var sourceList = [];
+    var total = 0;
+    var count = 0;
+    var downloadedCount = 0;
+
+    function incrementCount() { return ++downloadedCount; }
+    function getIncrementCount() { return downloadedCount; }
+
+    function getTotal(arr) {
+        total++;
+        if (!arr.depends) return true;
+        
+        for(var y=0; y<arr.depends.length; y++) {
+            getTotal(arr.depends[y]);
+        }
+    }
+    
+    for(var i=0; i<list.length; i++) {
+        var result = getTotal(list[i]);
+        if (result) continue;
+    }
     
     function c(obj, onLoad) {
         if (!obj) return;
         
-        if (oop.isString(obj)) { require( {"url": list[i] }); }
+        if (oop.isString(obj)) { require({"url": list[i], order:count++}, function() { c_callback(incrementCount()); }); }
         else {
-            if (obj.dependsOn) {
-                if (!oop.isArray(obj.dependsOn)) {
-                    throw "dependsOn must be array."
+            obj.order = count++;
+            if (obj.depends) {
+                if (!oop.isArray(obj.depends)) {
+                    throw "depends must be array."
                 }
-                var callback = function(nestedObj) {
-                    for(var d=0; d<nestedObj.dependsOn.length; d++) {
-                        c(nestedObj.dependsOn[d]);
+                
+                var cb = function(nestedObj) {
+                    for(var d=0; d<nestedObj.depends.length; d++) {
+                        c(nestedObj.depends[d]);
                     }
+                    c_callback(incrementCount());
                 };
                 
-                require(obj, function() { callback(obj); });
+                require(obj, function() { cb(obj); });
                 
             } else {
-                require(obj);
+                require(obj, function() { c_callback(incrementCount()); });
+            }
+        }
+    }
+    
+    function getGlobalImportingCount() { return oop.globals.globalImportingCount; }
+    function incrementGlobalImportingCount() {
+        oop.globals.globalImportingCount = oop.globals.globalImportingCount || 0;
+        oop.globals.globalImportingCount++;
+        return oop.globals.globalImportingCount;
+    }
+    function c_callback(cnt) {
+        var sortedList = sourceList.sort(function(a,b) {
+            var aa = a.attributes["data-order"];
+            var bb = b.attributes["data-order"];
+            return aa < bb ? -1 : aa > bb ? 1 : 0;
+        });
+        if (total == cnt) {
+            if (callback) callback(sortedList);
+
+            oop.publish("js.oop.imported", { importedCount : incrementGlobalImportingCount(), object: sortedList });
+            if (oop.globals.importedCount === getGlobalImportingCount()) {
+                oop.globals.enabledImportingCount = false;
+                for(var i in window) {
+                    if (window.hasOwnProperty(i)) {
+                        oop.globals.imported[i] = window[i];
+                    }
+                }
+                oop.publish("js.oop.importingAllCompleted");
             }
         }
     }
@@ -494,88 +630,17 @@ oop.import = (function(list) {
     for(var i=0; i<list.length; i++) {
         c(list[i]);
     }
-    
 });
 
-oop.importTemplate = (function(list, callback) {
-    var loaded = 0;
-    var count = 0;
-    for(var i=0; i<list.length; i++) {
-        var objTemplate = {
-            url: list[i], isLiteral:true, preHandler: function(source) {
-                source.type = "x-nexon-template"; 
-                source.id += "-template";
-                source.attributes["data-order"] = count++;
-            },
-            order: i,
-            callback: function(result, define) {
-                loaded++;
-                result.attributes["data-order"] = define.order;
-                
-                if (loaded == list.length) {
-                    if (callback) callback(getTemplates("x-nexon-template"));
-                } 
-            }
-        };
-        oop.import([objTemplate]);
+oop.globals.ready = [];
+oop.ready = function(resolveCallback) {
+
+    function Ready(resolveCallback) {
+        this.callbacks = resolveCallback;
     }
-    
-    function getTemplates(scriptType) {
-        scriptType = scriptType || "x-nexon-template";
-        
-        var arr = [];
-        var scripts = document.getElementsByTagName("script");
-        for(var i=0; i<scripts.length; i++) {
-            if (scripts[i].type != scriptType) continue;
-            
-            arr.push(scripts[i]);
-        }
-        
-        return arr.sort(function(a,b) {
-            var aa = a.attributes["data-order"];
-            var bb = b.attributes["data-order"];
-            return aa < bb ? -1 : aa > bb ? 1 : 0;
-        });
-    }
-});
 
-/**
- * OOP Flow
- */
-(function(oop) {
-    
-    
-    oop.flow = function(obj) {
-        return {
-            "then": function() {
-                return this;
-            },
-            "with": function() {
-                return this;
-            }
-        };
-    };
-    
-})(oop);
+    var readyObj = Object.call(Ready, arguments);
+    var r = oop.inject(readyObj[0], {prefix:"oop.globals.imported."});
 
-(function(oop) {
-    oop.behaviors = {
-            LoggingBehavior: oop.interceptionBehavior(function() {
-                                                                    this.date = new Date();
-                                                                    if (!this.date) {
-                                                                    LOG(this.date.toLocaleString() + " [js.oop] LoggingBehavior Begin ");
-                                                                    var options = {
-                                                                          year: 'numeric', month: 'numeric', day: 'numeric',
-                                                                          hour: 'numeric', minute: 'numeric', second: 'numeric',
-                                                                          hour12: false
-                                                                        };
-                                                                    }
-                                                                    LOG("["+this.date.toLocaleString('en-US', this.options)+"] ", arguments);
-                                                                },
-                                                                function() { 
-                                                                    LOG(this.date.toLocaleString() + " [js.oop] LoggingBehavior End ")
-                                                                }, undefined,undefined),
-            ExceptionBehavior: oop.interceptionBehavior(undefined,undefined,undefined,undefined)
-        };
-
-})(oop);
+    oop.globals.ready.push(r[0]);
+};
