@@ -49,7 +49,7 @@ module.exports = function(grunt) {
 			main: {
 				files: [{
 					expand: true,
-					flatten: true
+					flatten: true,
 					src: ["src/js-oop.js", "work/*.min.js"],
 					dest: "dist/",
 				}]
