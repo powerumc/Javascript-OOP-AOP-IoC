@@ -406,8 +406,14 @@ oop = (function () {
 	}
 
 	/**
+     * Subscribe the event.
+     * Execute a callback function when firing event.
+     * 
      * 이벤트를 구독합니다.
      * 이벤트가 발행될 때 callback 함수를 실행합니다.
+     * 
+     * detail or details in a callback function is arguments.
+     * The detail property if web browser have support CustomEvent Class, Otherwise to details property pass the arguments. 
      *
      * callback 함수의 인자에 detail 또는 details 속성이 발행 매개변수 입니다.
      * CustomEvent 클래스를 지원하는 브라우저는 detail 속성에, 그렇지 않은 브라우저는 details 속성에 매개변수 값이 전달됩니다.
@@ -459,6 +465,9 @@ oop = (function () {
 	};
 
 	/**
+     * Publish the event.
+     * emit the event to have all subscribed the event listeners.
+     * 
      * 이벤트를 발행합니다.
      * 이 이벤트를 구독하는 모든 리스너에게 이벤트를 발생시킵니다.
      *
@@ -491,6 +500,8 @@ oop = (function () {
 
 
 /**
+ * Create web request object via XMLHttpRequest.
+ * 
  * XMLHttpRequest 를 이용하여 웹요청을 하는 객체를 생성합니다.
  *
  * @example
@@ -515,6 +526,8 @@ oop.xhr = (function (oop) {
 			/**
 			 * @class commonXhr
 			 *
+             * The factory method, create the XMLHttpRequest(IE. "Microsoft.XMLHTTP") object.
+             *              
 			 * XMLHttpRequest(IE. "Microsoft.XMLHTTP") 객체를 생성하는 팩토리 메서드 입니다.
 			 *
 			 * @example 
@@ -533,6 +546,8 @@ oop.xhr = (function (oop) {
 				return self;
 			},
 			/**
+             * Call the send method after set xhr options up. 
+             * 
 			 * 모든 Xhr 설정을 마치면 send 메서드를 이용하여 원격 호출을 시작합니다.
 			 * 
 			 * @example 
@@ -548,6 +563,8 @@ oop.xhr = (function (oop) {
 				return void (0);
 			},
 			/**
+             * The callback function when it is perform success the remote function
+             * 
 			 * 원격 호출이 성공할 때 실행되는 callback 함수입니다.
 			 *
 			 * @example 
@@ -574,6 +591,8 @@ oop.xhr = (function (oop) {
 				return this;
 			},
 			/**
+             * The callback function when it is perform failure the remote function.
+             * 
 			 * 원격 호출이 실패할 때 실행되는 callback 함수입니다.
 			 * 
 			 * @example 
@@ -594,6 +613,8 @@ oop.xhr = (function (oop) {
 			},
 
 			/**
+             * The callback function when emit the timeout event.
+             * 
 			 * timeout 발생 시 실행되는 callback 함수입니다.
 			 *
 			 * @example
@@ -626,6 +647,8 @@ oop.xhr = (function (oop) {
 
 	return {
 		/**
+         * HTTP Methods 'GET' have call remote url, and return the commonXhr object.
+         * 
 		 * HTTP Methods 'GET'을 사용하여 원격 URL 을 호출하고, commonXhr 객체를 반환합니다.
 		 *
 		 * @param url {string} URL 을 설정합니다.
@@ -642,6 +665,8 @@ oop.xhr = (function (oop) {
 			return xhr;
 		},
 		/**
+         * HTTP Methods 'POST' have call remote url, and return the commonXhr object.
+         * 
 		 * HTTP Methods 'POST'를 사용하여 원격  URL 을 호출하고, commonXhr 객체를 반환합니다.
 		 *
 		 * @param url {string} URL 을 설정합니다.
@@ -659,6 +684,8 @@ oop.xhr = (function (oop) {
 		},
 
 		/**
+         * Get the MimeType in the oop.xhr did set the each extensions.
+         * 
 		 * oop.xhr 에서 미리 설정해둔 파일 확장자별 MimeType 을 가져옵니다.
 		 *
 		 * @example
@@ -676,6 +703,8 @@ oop.xhr = (function (oop) {
 		},
 
 		/**
+         * Add or override the MimeType in the oop.xhr setdid set the each extensions
+         * 
 		 * oop.xhr 에서 미리 설정해둔 파일 확장자별 MimeType 에 사용자의 MimeType 을 추가하거나 재정의 합니다.
 		 *
 		 * @example
@@ -765,6 +794,8 @@ oop.xhr = (function (oop) {
 oop.globals.importQueue = [];
 
 /**
+ * Download web resources parallely or sequencely.
+ * 
  * 웹 리소스를 병열 또는 순차적으로 다운로드합니다.
  *
  * @example
@@ -827,6 +858,9 @@ oop.imports = function (list, callback) {
 };
 
 /**
+ * It's internal function,
+ * Don't be use it.
+ * 
  * 내부적으로 사용합니다.
  * 사용자는 실행하지 마십시오.
  *
