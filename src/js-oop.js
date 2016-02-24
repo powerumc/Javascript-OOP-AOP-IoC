@@ -35,10 +35,10 @@ var oop,
 if (msie && msie <= 8) {
 	LOG = DEBUG = TRACE = ERROR = function() {};
 } else {
-	LOG = function (log) { if (console && console.log) { console.log(log) } };
-	DEBUG = function (log) { if (console && console.log) { console.log(log) } };
-	TRACE = function (log) { if (console && console.log) { console.log(log) } };
-	ERROR = function (log) { if (console && console.log) { console.log(log) } };
+	LOG = function (log) { if (console && console.log) { console.log(log);} };
+	DEBUG = function (log) { if (console && console.log) { console.log(log); } };
+	TRACE = function (log) { if (console && console.log) { console.log(log); } };
+	ERROR = function (log) { if (console && console.log) { console.log(log); } };
 }
 
 oop = (function () {
